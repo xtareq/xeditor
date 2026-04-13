@@ -1,0 +1,1049 @@
+<!-- Hidden file input for opening TXT/MD files -->
+<app-titlebar (openSettings)="openSettings()"></app-titlebar>
+
+<div class="page">
+  <div class="journal-page">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <div class="journal-layout" [class.collapsed]="sidebarCollapsed()">
+      <!-- ── Sidebar ── -->
+      <aside class="sidebar glass" [class.collapsed]="sidebarCollapsed()">
+        <div class="sidebar-noise"></div>
+
+        @if (!sidebarCollapsed()) {
+          <!-- Sidebar header -->
+             <div class="sidebar-inner">
+          <div class="sidebar-header">
+            <div class="sidebar-title-row">
+              <div class="sidebar-brand">
+                <!-- <svg
+                  (click)="toggleSidebar()"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                >
+                  <path
+                    d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                  />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                </svg> -->
+                <button
+                  class="hamburger-btn"
+                  (click)="toggleSidebar()"
+                  title="Toggle sidebar"
+                >
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </button>
+                <span>List</span>
+              </div>
+              <div class="sidebar-header-actions">
+                <button
+                  class="icon-action"
+                  (click)="openFile()"
+                  title="Open file"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
+                    <path d="M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                </button>
+                <button
+                  class="icon-action accent"
+                  (click)="newTab()"
+                  title="New entry"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Search -->
+            <div class="sidebar-search" [class.focused]="searchFocused()">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search entries..."
+                [(ngModel)]="searchQuery"
+                (focus)="searchFocused.set(true)"
+                (blur)="searchFocused.set(false)"
+              />
+            </div>
+          </div>
+
+          <!-- Tab list -->
+          <div class="tab-list">
+            @if (pinnedTabs().length > 0) {
+              <div class="tab-group-label">Pinned</div>
+              @for (tab of pinnedTabs(); track tab.id) {
+                <div
+                  class="tab-item"
+                  [class.active]="activeTabId() === tab.id"
+                  (click)="setActive(tab.id)"
+                >
+                  <div class="tab-item-glow"></div>
+                  <div class="tab-item-inner">
+                    <div class="tab-pin-icon">
+                      <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                          d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z"
+                        />
+                      </svg>
+                    </div>
+                    <div class="tab-info">
+                      <span class="tab-title">{{
+                        tab.title || "Untitled"
+                      }}</span>
+                      <span class="tab-meta">
+                        <span
+                          class="tab-type-badge"
+                          [class.md]="tab.fileType === 'md'"
+                          >{{ tab.fileType?.toUpperCase() ?? "TXT" }}</span
+                        >
+                        {{ tab.wordCount }} words ·
+                        {{ formatRelative(tab.updatedAt) }}
+                      </span>
+                    </div>
+                    <button
+                      class="tab-action"
+                      (click)="closeTab(tab.id, $event)"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                      >
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              }
+              <div class="tab-group-label" style="margin-top: 8px">Entries</div>
+            }
+
+            @for (tab of filteredTabs(); track tab.id) {
+              <div
+                class="tab-item"
+                [class.active]="activeTabId() === tab.id"
+                (click)="setActive(tab.id)"
+              >
+                <div class="tab-item-glow"></div>
+                <div class="tab-item-inner">
+                  <div class="tab-icon">
+                    @if (tab.fileType === "md") {
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                      >
+                        <path
+                          d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                        />
+                        <polyline points="14 2 14 8 20 8" />
+                        <path d="M9 13h6M9 17h4" />
+                      </svg>
+                    } @else {
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                      >
+                        <path
+                          d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                        />
+                        <polyline points="14 2 14 8 20 8" />
+                      </svg>
+                    }
+                  </div>
+                  <div class="tab-info">
+                    <span class="tab-title">{{ tab.title || "Untitled" }}</span>
+                    <span class="tab-meta">
+                      <span
+                        class="tab-type-badge"
+                        [class.md]="tab.fileType === 'md'"
+                        >{{ tab.fileType?.toUpperCase() ?? "TXT" }}</span
+                      >
+                      {{ tab.wordCount }} words ·
+                      {{ formatRelative(tab.updatedAt) }}
+                    </span>
+                  </div>
+                  <button class="tab-action" (click)="closeTab(tab.id, $event)">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                    >
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            }
+
+            @if (filteredTabs().length === 0 && pinnedTabs().length === 0) {
+              <div class="tab-empty">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                >
+                  <path
+                    d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                  />
+                </svg>
+                <span>No entries yet</span>
+                <button class="new-entry-btn sm" (click)="newTab()">
+                  Create entry
+                </button>
+              </div>
+            }
+          </div>
+
+          <!-- Sidebar footer -->
+          <div class="sidebar-footer">
+            <span class="sidebar-stat">{{ tabs().length }} entries</span>
+            <span class="sidebar-stat">{{ totalWords() }} words</span>
+          </div>
+          </div>
+        }
+
+        <!-- ── Collapse toggle (always visible) ── -->
+     
+
+        <!-- ── Collapsed icon strip ── -->
+        @if (sidebarCollapsed()) {
+          <div class="collapsed-strip">
+            <button
+              class="hamburger-btn"
+              (click)="toggleSidebar()"
+              title="Expand sidebar"
+            >
+              <span></span>
+              <span></span>
+              <span></span>
+            </button>
+            <button class="strip-btn" (click)="openFile()" title="Open file">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+            </button>
+            <button
+              class="strip-btn accent"
+              (click)="newTab(); sidebarCollapsed.set(false)"
+              title="New entry"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            </button>
+            @for (tab of tabs().slice(0, 6); track tab.id) {
+              <button
+                class="strip-tab"
+                [class.active]="activeTabId() === tab.id"
+                (click)="setActive(tab.id)"
+                [title]="tab.title || 'Untitled'"
+              >
+                {{ (tab.title || "U").charAt(0).toUpperCase() }}
+              </button>
+            }
+          </div>
+        }
+      </aside>
+
+      <!-- ── Editor area ── -->
+      <main class="editor-area">
+        @if (activeTab()) {
+          <div class="editor-wrap glass">
+            <div class="editor-noise"></div>
+
+            <!-- Toolbar -->
+            <div class="editor-toolbar">
+              <div class="toolbar-left">
+                <a routerLink="/dashboard" class="back-btn">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
+                    <polyline points="15 18 9 12 15 6" />
+                  </svg>
+                </a>
+                <input
+                  class="title-input"
+                  type="text"
+                  placeholder="Untitled entry"
+                  [value]="activeTab()!.title"
+                  (input)="updateTitle($any($event.target).value)"
+                  (keydown.enter)="saveToDisk()"
+                />
+                <span
+                  class="file-type-pill"
+                  [class.md]="activeTab()!.fileType === 'md'"
+                >
+                  {{ activeTab()!.fileType?.toUpperCase() ?? "TXT" }}
+                </span>
+              </div>
+
+              <div class="toolbar-right">
+                <!-- Format group — only for txt -->
+                @if (activeTab()!.fileType !== "md") {
+                  <div class="format-group">
+                    <button
+                      class="fmt-btn"
+                      (click)="format('bold')"
+                      title="Bold"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                      >
+                        <path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z" />
+                        <path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z" />
+                      </svg>
+                    </button>
+                    <button
+                      class="fmt-btn"
+                      (click)="format('italic')"
+                      title="Italic"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                      >
+                        <line x1="19" y1="4" x2="10" y2="4" />
+                        <line x1="14" y1="20" x2="5" y2="20" />
+                        <line x1="15" y1="4" x2="9" y2="20" />
+                      </svg>
+                    </button>
+                    <button
+                      class="fmt-btn"
+                      (click)="format('insertUnorderedList')"
+                      title="Bullet list"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <line x1="8" y1="6" x2="21" y2="6" />
+                        <line x1="8" y1="12" x2="21" y2="12" />
+                        <line x1="8" y1="18" x2="21" y2="18" />
+                        <circle cx="3" cy="6" r="1" fill="currentColor" />
+                        <circle cx="3" cy="12" r="1" fill="currentColor" />
+                        <circle cx="3" cy="18" r="1" fill="currentColor" />
+                      </svg>
+                    </button>
+                    <button
+                      class="fmt-btn"
+                      (click)="format('formatBlock', 'h2')"
+                      title="Heading"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                      >
+                        <path d="M4 12h8" />
+                        <path d="M4 6v12" />
+                        <path d="M12 6v12" />
+                        <path d="M17 10l3 2-3 2" />
+                      </svg>
+                    </button>
+                    <div class="fmt-separator"></div>
+                    <button
+                      class="fmt-btn"
+                      (click)="format('undo')"
+                      title="Undo"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <polyline points="9 14 4 9 9 4" />
+                        <path d="M20 20v-7a4 4 0 0 0-4-4H4" />
+                      </svg>
+                    </button>
+                    <button
+                      class="fmt-btn"
+                      (click)="format('redo')"
+                      title="Redo"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <polyline points="15 14 20 9 15 4" />
+                        <path d="M4 20v-7a4 4 0 0 1 4-4h12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <!-- Color picker -->
+                  <div class="color-picker-wrap">
+                    <button
+                      class="fmt-btn color-btn"
+                      (click)="openColorPicker()"
+                      [class.fmt-active]="colorPickerOpen()"
+                      title="Text color"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="M9 3L5 21" />
+                        <path d="M19 3L15 21" />
+                        <path d="M5 9h14" />
+                        <path d="M3 15h18" />
+                      </svg>
+                      <span
+                        class="color-indicator"
+                        [style.background]="activeColor()"
+                      ></span>
+                    </button>
+
+                    @if (colorPickerOpen()) {
+                      <div class="color-dropdown">
+                        <div class="color-dropdown-noise"></div>
+                        <div class="color-section-label">Theme</div>
+                        <div class="color-swatches">
+                          @for (c of themeColors; track c.value) {
+                            <button
+                              class="swatch"
+                              [style.background]="c.value"
+                              [class.active]="activeColor() === c.value"
+                              [title]="c.label"
+                              (click)="applyColor(c.value)"
+                            >
+                              @if (activeColor() === c.value) {
+                                <svg
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="white"
+                                  stroke-width="3"
+                                >
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              }
+                            </button>
+                          }
+                        </div>
+                        <div
+                          class="color-section-label"
+                          style="margin-top: 8px"
+                        >
+                          Palette
+                        </div>
+                        <div class="color-swatches">
+                          @for (c of paletteColors; track c.value) {
+                            <button
+                              class="swatch"
+                              [style.background]="c.value"
+                              [class.active]="activeColor() === c.value"
+                              [title]="c.label"
+                              (click)="applyColor(c.value)"
+                            >
+                              @if (activeColor() === c.value) {
+                                <svg
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="white"
+                                  stroke-width="3"
+                                >
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              }
+                            </button>
+                          }
+                        </div>
+                        <div class="color-divider"></div>
+                        <button class="color-reset" (click)="resetColor()">
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                          >
+                            <path d="M3 6h18" />
+                            <path d="M8 6V4h8v2" />
+                            <path d="M19 6l-1 14H6L5 6" />
+                          </svg>
+                          Remove color
+                        </button>
+                      </div>
+                    }
+                  </div>
+
+                  <div class="fmt-separator"></div>
+                }
+
+                <!-- MD Preview toggle -->
+                <!-- TO: -->
+                @if (activeTab()!.fileType === "md") {
+                  <div class="editor-mode-group">
+                    <button
+                      class="mode-btn"
+                      [class.mode-active]="editorMode() === 'edit'"
+                      (click)="setEditorMode('edit')"
+                      title="Edit"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path
+                          d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                        />
+                        <path
+                          d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                        />
+                      </svg>
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      class="mode-btn"
+                      [class.mode-active]="editorMode() === 'preview'"
+                      (click)="setEditorMode('preview')"
+                      title="Preview"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path
+                          d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+                        />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                      <span>Preview</span>
+                    </button>
+                    <button
+                      class="mode-btn"
+                      [class.mode-active]="editorMode() === 'split'"
+                      (click)="setEditorMode('split')"
+                      title="Split"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <rect x="2" y="3" width="20" height="18" rx="2" />
+                        <line x1="12" y1="3" x2="12" y2="21" />
+                      </svg>
+                      <span>Split</span>
+                    </button>
+                  </div>
+                  <div class="fmt-separator"></div>
+                }
+
+                <!-- Pin -->
+                <button
+                  class="fmt-btn"
+                  [class.fmt-active]="activeTab()!.pinned"
+                  (click)="togglePin()"
+                  title="Pin entry"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z"
+                    />
+                  </svg>
+                </button>
+
+                <!-- Save to disk -->
+                <button
+                  class="fmt-btn file-btn"
+                  (click)="saveToDisk()"
+                  title="Save file"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"
+                    />
+                    <polyline points="17 21 17 13 7 13 7 21" />
+                    <polyline points="7 3 7 8 15 8" />
+                  </svg>
+                  <span>Save</span>
+                </button>
+
+                <!-- Open file -->
+                <button
+                  class="fmt-btn file-btn"
+                  (click)="openFile()"
+                  title="Open file"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  <span>Open</span>
+                </button>
+
+                <div class="fmt-separator"></div>
+
+                <!-- Word count -->
+                <div class="word-count">
+                  <span class="wc-num">{{ activeTab()!.wordCount }}</span>
+                  <span class="wc-label">words</span>
+                </div>
+                <button
+                  class="btn-close"
+                  (click)="closeTab(activeTab()!.id, $event)"
+                >
+                  x
+                </button>
+                <!-- Save indicator -->
+                <!-- <div class="save-indicator" [class.saved]="saved()" style="width: 80px; text-align: center;">
+                  @if (saved()) {
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                    >
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    Saved
+                  } @else {
+                    <svg
+                      class="spin"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                    </svg>
+                    Saving…
+                  }
+                </div> -->
+              </div>
+            </div>
+
+            <!-- Editor body — split when MD + preview open -->
+            <div
+              class="editor-body"
+              [class.split]="
+                activeTab()!.fileType === 'md' && editorMode() === 'split'
+              "
+            >
+              <!-- Write pane -->
+              @if (
+                activeTab()!.fileType !== "md" ||
+                editorMode() === "edit" ||
+                editorMode() === "split"
+              ) {
+                <div class="editor-pane">
+                  <!-- <div class="editor-date">
+                  {{ formatFullDate(activeTab()!.createdAt) }}
+                </div> -->
+
+                  <div
+                    #editorRef
+                    class="editor-content"
+                    [attr.spellcheck]="activeTab()?.fileType === 'txt'"
+                    [class.md-mode]="activeTab()!.fileType === 'md'"
+                    [style]="{ color: activeColor() }"
+                    contenteditable="true"
+                    [attr.data-placeholder]="
+                      activeTab()!.fileType === 'md'
+                        ? 'Write markdown…'
+                        : 'Start writing your thoughts…'
+                    "
+                    (input)="onContentChange($event)"
+                    (keydown)="onKeyDown($event)"
+                  ></div>
+                </div>
+              }
+              <!-- Preview pane (MD only) -->
+              <!-- @if (editorMode() === "edit" || editorMode() === "split") {
+                <div class="editor-pane">
+                  <div
+                    #editorRef
+                    class="editor-content"
+                    [attr.spellcheck]="activeTab()?.fileType === 'txt'"
+                    [class.md-mode]="activeTab()!.fileType === 'md'"
+                    [style]="{ color: activeColor() }"
+                    contenteditable="true"
+                    [attr.data-placeholder]="
+                      activeTab()!.fileType === 'md'
+                        ? 'Write markdown…'
+                        : 'Start writing your thoughts…'
+                    "
+                    (input)="onContentChange($event)"
+                    (keydown)="onKeyDown($event)"
+                  ></div>
+                </div>
+              } -->
+
+              @if (activeTab()!.fileType === "md" && editorMode() !== "edit") {
+                <div class="preview-pane">
+                  <div class="preview-header">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                    >
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    Preview
+                  </div>
+                  <div
+                    class="preview-content md-body"
+                    [innerHTML]="renderedMd()"
+                    (click)="onPreviewClick($event)"
+                  ></div>
+                </div>
+              }
+            
+            @if (findReplaceOpen()) {
+  <div class="find-replace-bar">
+    <div class="fr-noise"></div>
+
+    <!-- ── Find row ── -->
+    <div class="fr-row">
+      <div class="fr-input-wrap" [class.fr-has-results]="findMatches().length > 0" [class.fr-no-results]="findQuery() && findMatches().length === 0">
+        <svg class="fr-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input
+          class="fr-find-input"
+          type="text"
+          placeholder="Find…"
+          [value]="findQuery()"
+          (input)="onFindQueryChange($any($event.target).value)"
+          (keydown.enter)="findNext()"
+          (keydown.shift.enter)="findPrev()"
+        />
+        @if (findMatches().length > 0) {
+          <span class="fr-count">
+            {{ findCurrentIndex() + 1 }}/{{ findMatches().length }}
+          </span>
+        }
+      </div>
+
+      <!-- Options -->
+      <button
+        class="fr-opt-btn"
+        [class.fr-opt-active]="findMatchCase()"
+        (click)="toggleMatchCase()"
+        title="Match case"
+      >Aa</button>
+      <button
+        class="fr-opt-btn"
+        [class.fr-opt-active]="findWholeWord()"
+        (click)="toggleWholeWord()"
+        title="Whole word"
+      >W</button>
+
+      <div class="fr-sep"></div>
+
+      <!-- Navigate -->
+      <button class="fr-nav-btn" (click)="findPrev()" title="Previous (Shift+Enter)" [disabled]="!findMatches().length">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
+      <button class="fr-nav-btn" (click)="findNext()" title="Next (Enter)" [disabled]="!findMatches().length">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </button>
+
+      <div class="fr-sep"></div>
+
+      <!-- Close -->
+      <button class="fr-close-btn" (click)="closeFindReplace()" title="Close (Esc)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- ── Replace row ── -->
+    <div class="fr-row">
+      <div class="fr-input-wrap">
+        <svg class="fr-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/>
+        </svg>
+        <input
+          class="fr-replace-input"
+          type="text"
+          placeholder="Replace…"
+          [value]="replaceQuery()"
+          (input)="replaceQuery.set($any($event.target).value)"
+          (keydown.enter)="replaceOne()"
+        />
+      </div>
+
+      <button class="fr-action-btn" (click)="replaceOne()" [disabled]="!findMatches().length" title="Replace (Enter)">
+        Replace
+      </button>
+      <button class="fr-action-btn fr-action-all" (click)="replaceAll()" [disabled]="!findMatches().length" title="Replace all">
+        All
+      </button>
+    </div>
+
+  </div>
+}
+            
+            </div>
+
+            <!-- Status bar -->
+            <div class="editor-statusbar">
+              <span class="status-item"
+                >{{ activeTab()!.wordCount }} words</span
+              >
+              <span class="status-sep">·</span>
+              <span class="status-item">{{ charCount() }} characters</span>
+              <span class="status-sep">·</span>
+              <span class="status-item">{{ lineCount() }} lines</span>
+              <span class="status-sep">·</span>
+              <span class="status-item updated"
+                >Last edited {{ formatRelative(activeTab()!.updatedAt) }}</span
+              >
+            </div>
+          </div>
+        } @else {
+          <div class="editor-empty glass">
+            <div class="editor-noise"></div>
+            <div class="empty-state">
+              <div class="empty-icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1"
+                >
+                  <path
+                    d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                  />
+                  <polyline points="14 2 14 8 20 8" />
+                </svg>
+              </div>
+              <h2>XEditor</h2>
+              <p>Create a new entry or open a .txt / .md file</p>
+              <div class="empty-actions">
+                <button class="new-entry-btn" (click)="newTab()">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  Text
+                </button>
+                <button class="new-entry-btn" (click)="newMarkdownTab()">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  Markdown
+                </button>
+                <button class="open-btn" (click)="openFile()">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  Open File
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      </main>
+    </div>
+    <footer class="app-footer">
+      <span>© 2026 Tareq Hossain</span>
+      <span class="footer-sep">·</span>
+      <span>v0.0.10</span>
+    </footer>
+  </div>
+  @if (settingsOpen()) {
+  <app-settings-modal
+    [current]="settings()"
+    (close)="closeSettings()"
+    (saved)="onSettingsSaved($event)"
+  ></app-settings-modal>
+}
+
+@if (contextMenu().visible) {
+  <div
+    class="ctx-menu"
+    [style.left.px]="contextMenu().x"
+    [style.top.px]="contextMenu().y"
+  >
+    <div class="ctx-noise"></div>
+
+    <button class="ctx-item" (click)="ctxUndo()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="9 14 4 9 9 4"/>
+        <path d="M20 20v-7a4 4 0 0 0-4-4H4"/>
+      </svg>
+      Undo
+      <kbd>Ctrl+Z</kbd>
+    </button>
+
+    <button class="ctx-item" (click)="ctxRedo()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="15 14 20 9 15 4"/>
+        <path d="M4 20v-7a4 4 0 0 1 4-4h12"/>
+      </svg>
+      Redo
+      <kbd>Ctrl+Y</kbd>
+    </button>
+
+    <div class="ctx-divider"></div>
+
+    <button class="ctx-item" (click)="ctxCut()" [disabled]="!hasSelection()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="6" cy="20" r="3"/><circle cx="18" cy="20" r="3"/>
+        <line x1="8.12" y1="17.88" x2="19.07" y2="6.93"/>
+        <line x1="5" y1="5" x2="13" y2="13"/>
+      </svg>
+      Cut
+      <kbd>Ctrl+X</kbd>
+    </button>
+
+    <button class="ctx-item" (click)="ctxCopy()" [disabled]="!hasSelection()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="9" y="9" width="13" height="13" rx="2"/>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+      </svg>
+      Copy
+      <kbd>Ctrl+C</kbd>
+    </button>
+
+    <button class="ctx-item" (click)="ctxPaste()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+        <rect x="8" y="2" width="8" height="4" rx="1"/>
+      </svg>
+      Paste
+      <kbd>Ctrl+V</kbd>
+    </button>
+
+    <div class="ctx-divider"></div>
+
+    <button class="ctx-item" (click)="ctxSelectAll()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <path d="M9 9h6v6H9z"/>
+      </svg>
+      Select All
+      <kbd>Ctrl+A</kbd>
+    </button>
+
+  </div>
+}
+
+
+@if (closeConfirm()) {
+  <app-close-confirm
+    [state]="closeConfirm()!"
+    (save)="confirmSaveAndClose()"
+    (discard)="confirmDiscardAndClose()"
+    (cancel)="confirmCancelClose()"
+  ></app-close-confirm>
+}
+</div>
