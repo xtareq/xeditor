@@ -52,10 +52,12 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   activeColor = signal<string>('rgba(255,255,255,0.92)');
   editorMode = signal<'edit' | 'preview' | 'split'>('split'); // ← default split
   renderedMd = signal('');
-  fontSize = signal<number>(16);
+  fontSize = signal<number>(14);
   contextMenu = signal<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
   settingsOpen = signal(false);
   settings = signal<AppSettings>({ ...DEFAULT_SETTINGS });
+  tabListDropdownOpen = signal(false);
+  newFileMenuOpen = signal(false);
 
   // ── Close confirm modal ───────────────────────────────────────────────────
   closeConfirm = signal<{
@@ -117,6 +119,11 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     );
   });
   totalWords = computed(() => this.tabs().reduce((sum, t) => sum + t.wordCount, 0));
+  // Pinned tabs first, then unpinned — for the top tab bar
+  orderedTabs = computed(() => [
+    ...this.tabs().filter(t => t.pinned),
+    ...this.tabs().filter(t => !t.pinned),
+  ]);
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -171,6 +178,16 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
   toggleSidebar() { this.sidebarCollapsed.update(v => !v); }
 
+  toggleTabListDropdown() { this.tabListDropdownOpen.update(v => !v); this.newFileMenuOpen.set(false); }
+  closeTabListDropdown() { this.tabListDropdownOpen.set(false); }
+  toggleNewFileMenu() { this.newFileMenuOpen.update(v => !v); this.tabListDropdownOpen.set(false); }
+  closeNewFileMenu() { this.newFileMenuOpen.set(false); }
+
+  newTabOfType(type: 'txt' | 'md') {
+    this.newFileMenuOpen.set(false);
+    if (type === 'md') { this.newMarkdownTab(); } else { this.newTab(); }
+  }
+
   setEditorMode(mode: 'edit' | 'preview' | 'split') {
     this.editorMode.set(mode);
     if (mode === 'preview') {
@@ -191,9 +208,9 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       createdAt: new Date(), updatedAt: new Date(), wordCount: 0, pinned: false,
       fileType: 'txt',
       diskPath: null,
-      fontSize: 16,
+      fontSize: 14,
     };
-    this.tabs.update(t => [tab, ...t]);
+    this.tabs.update(t => [...t, tab]);
     this.setActive(tab.id);
   }
 
@@ -203,16 +220,17 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       createdAt: new Date(), updatedAt: new Date(), wordCount: 0, pinned: false,
       fileType: 'md',
       diskPath: null,
-      fontSize: 16,
+      fontSize: 14,
     };
-    this.tabs.update(t => [tab, ...t]);
+    this.tabs.update(t => [...t, tab]);
     this.setActive(tab.id);
   }
+
 
   setActive(id: string) {
     this.activeTabId.set(id);
     const tab = this.tabs().find(t => t.id === id);
-    this.fontSize.set(tab?.fontSize ?? 16);
+    this.fontSize.set(tab?.fontSize ?? 14);
 
     // For non-MD files, force edit mode so syncEditorContent never
     // hits the early-return preview branch and skips rendering content.
@@ -230,6 +248,10 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     } else {
       setTimeout(() => this.syncEditorContent(), 0);
     }
+    setTimeout(() => {
+      const tabEl = this.el.nativeElement.querySelector(`.tabbar-tab[data-id="${id}"]`);
+      tabEl?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    }, 0);
   }
 
   closeTab(id: string, e: Event) {
@@ -499,8 +521,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     return (window.getSelection()?.toString().length ?? 0) > 0;
   }
 
-  // ── File I/O ──────────────────────────────────────────────────────────────
-
+  // ── File I/O 
   async saveToDisk() {
     const tab = this.activeTab();
     if (!tab) return;
@@ -574,7 +595,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
         pinned: false,
         fileType: ext,
         diskPath: path,
-        fontSize: 16,
+        fontSize: 14,
       };
 
       this.tabs.update(t => [tab, ...t]);
@@ -623,7 +644,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       // Single code path — all files treated as plain text, no HTML/rich-text ever.
       editor.style.whiteSpace = 'pre-wrap';
       editor.style.fontFamily = this.isMdFile(tab.fileType) ? 'monospace' : 'inherit';
-      editor.style.fontSize = `${tab.fontSize ?? 16}px`;
+      editor.style.fontSize = `${tab.fontSize ?? 14}px`;
       editor.innerText = tab.content;
       this.updateStats(tab.content);
 
@@ -783,7 +804,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
           updatedAt: new Date(t.updatedAt),
           fileType: t.fileType ?? 'txt',
           diskPath: t.diskPath ?? null,
-          fontSize: t.fontSize ?? 16,
+          fontSize: t.fontSize ?? 14,
         }));
         this.tabs.set(parsed);
 
@@ -1027,6 +1048,9 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     // Apply font color globally
     this.activeColor.set(s.fontColor);
+
+    const alpha = (s.transprency ?? 100) / 100;
+    document.body.style.background = `rgba(2, 0, 2, ${alpha})`;
   }
 
   private async saveSettings(s: AppSettings) {
@@ -1043,6 +1067,8 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
         this.settings.set(s);
         this.activeColor.set(s.fontColor);
         this.fontSize.set(s.fontSize);
+        const alpha = (s.transprency ?? 100) / 100;
+        document.body.style.background = `rgba(2, 0, 2, ${alpha})`;
       }
     } catch (e) { console.error('loadSettings error:', e); }
   }

@@ -1,4 +1,4 @@
-**XEditor** (formerly XNote) is a lightweight, privacy-focused desktop note editor built with Tauri (Angular + Rust).
+**XEditor** is a lightweight, next generation desktop text editor built with Tauri.
 
 ## Core characteristics
 - Local-first note-taking (no cloud dependency)

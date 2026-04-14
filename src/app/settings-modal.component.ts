@@ -10,13 +10,15 @@ export interface AppSettings {
   fontColor: string;
   autosave: boolean;
   autosaveDelay: number; // ms
+  transprency: number;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  fontSize: 16,
+  fontSize: 14,
   fontColor: 'rgba(255,255,255,0.92)',
   autosave: true,
   autosaveDelay: 800,
+  transprency: 0
 };
 
 @Component({
@@ -191,6 +193,48 @@ export const DEFAULT_SETTINGS: AppSettings = {
               </div>
             }
           </div>
+
+           <div class="setting-divider"></div>
+            <div class="setting-group">
+            <div class="setting-label-row">
+              <div class="setting-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                  <polyline points="4 7 4 4 20 4 20 7"/>
+                  <line x1="9" y1="20" x2="15" y2="20"/>
+                  <line x1="12" y1="4" x2="12" y2="20"/>
+                </svg>
+                Transparency
+              </div>
+              <span class="setting-value-badge">{{ draft().transprency }}%</span>
+            </div>
+            <div class="font-size-control">
+              <!-- <button class="fs-btn" (click)="adjustFontSize(-1)" [disabled]="draft().fontSize <= 10">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </button> -->
+              <div class="fs-slider-wrap">
+                <input
+                  type="range"
+                  class="fs-slider"
+                  [min]="0"
+                  [max]="100"
+                  [value]="draft().transprency"
+                  (input)="onTransparencySlider($event)"
+                />
+                <div class="fs-track-fill" [style.width.%]="((draft().transprency) / 100) * 100"></div>
+              </div>
+              <!-- <button class="fs-btn" (click)="adjustFontSize(1)" [disabled]="draft().fontSize >= 48">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </button> -->
+            </div>
+
+          </div>
+
+          <div class="setting-divider"></div>
 
         </div>
 
@@ -725,6 +769,7 @@ export class SettingsModalComponent implements OnInit {
 
   allColors = [
     { label: 'White', value: 'rgba(255,255,255,0.92)' },
+    { label: 'Black', value: 'rgba(0, 0, 0, 0.94)' },
     { label: 'Muted', value: 'rgba(255,255,255,0.50)' },
     { label: 'Purple', value: '#c084fc' },
     { label: 'Indigo', value: '#818cf8' },
@@ -795,6 +840,12 @@ export class SettingsModalComponent implements OnInit {
 
   setDelay(ms: number) {
     this.draft.update(d => ({ ...d, autosaveDelay: ms }));
+  }
+
+  // -- Transparency
+  onTransparencySlider(e: Event) {
+    const val = +(e.target as HTMLInputElement).value;
+    this.draft.update(d => ({ ...d, transprency: val }));
   }
 
   // ── Actions ───────────────────────────────────────────────────────────────

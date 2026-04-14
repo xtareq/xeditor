@@ -123,6 +123,7 @@
   z-index: 1;
   height: 100%;
   padding: 16px;
+  padding-top: 0px !important;
   animation: fadeUp 0.45s ease both;
 }
 @keyframes fadeUp {
@@ -140,6 +141,18 @@
   display: flex;
   gap: 14px;
   height: 100%;
+}
+
+
+.glassx {
+  position: relative;
+
+  border: 1px solid var(--glass-border);
+  border-top-color: rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 /* ── Glass base ── */
@@ -567,12 +580,19 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  overflow: visible; /* must NOT be hidden — tabbar dropdowns escape this box */
+}
+/* Clip only the editor body/toolbar area, not the tabbar */
+.editor-wrap .editor-toolbar,
+.editor-wrap .editor-body,
+.editor-wrap .editor-statusbar,
+.editor-empty .empty-state {
   overflow: hidden;
 }
 .editor-wrap > *,
 .editor-empty > * {
   position: relative;
-  z-index: 1;
+  /* No z-index here — it creates a stacking context that traps the dropdown */
 }
 
 .editor-toolbar {
@@ -1786,4 +1806,348 @@
   background: rgba(192, 132, 252, 0.35);
   border-bottom-color: #c084fc;
   box-shadow: 0 0 0 1px rgba(192, 132, 252, 0.4);
+}
+/* ═══════════════════════════════════════════════
+   VSCode / Notepad-style Tab Bar
+   ═══════════════════════════════════════════════ */
+
+.tabbar {
+  display: flex;
+  align-items: stretch;
+  background: rgba(0, 0, 0, 0.18);
+  border-bottom: 1px solid var(--glass-border);
+  flex-shrink: 0;
+  min-height: 34px;
+  position: relative;
+  z-index: 20; /* above editor content, needed for dropdown to layer correctly */
+  overflow: visible; /* never clip — dropdowns must escape */
+}
+
+.tabbar-tabs {
+  display: flex;
+  align-items: stretch;
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-width: none;
+  min-width: 0;
+}
+.tabbar-tabs::-webkit-scrollbar { display: none; }
+
+/* Individual tab */
+.tabbar-tab {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px 0 10px;
+  min-width: 80px;
+  max-width: 180px;
+  height: 34px;
+  flex-shrink: 0;
+  cursor: pointer;
+  border-right: 1px solid var(--glass-border);
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 500;
+  font-family: "Roboto", sans-serif;
+  position: relative;
+  transition: background 0.13s, color 0.13s;
+  background: transparent;
+  user-select: none;
+}
+.tabbar-tab:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+}
+.tabbar-tab.active {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-primary);
+  border-top: 2px solid var(--accent);
+  padding-top: 0;
+}
+.tabbar-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.07);
+}
+.tabbar-tab.pinned {
+  border-top-color: rgba(251, 191, 36, 0.8);
+}
+
+.tabbar-tab-icon,
+.tabbar-tab-pin {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+.tabbar-tab.active .tabbar-tab-icon { opacity: 1; color: var(--accent); }
+.tabbar-tab-pin { color: rgba(251, 191, 36, 0.8); opacity: 1; }
+
+.tabbar-tab-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11.5px;
+}
+
+.tabbar-tab-badge {
+  font-size: 7.5px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  padding: 1px 3px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+.tabbar-tab-badge.md {
+  background: rgba(96, 165, 250, 0.12);
+  color: rgba(96, 165, 250, 0.75);
+  border-color: rgba(96, 165, 250, 0.2);
+}
+
+.tabbar-tab-close {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+  flex-shrink: 0;
+  padding: 0;
+  transition: all 0.12s;
+}
+.tabbar-tab-close svg { width: 9px; height: 9px; }
+.tabbar-tab:hover .tabbar-tab-close,
+.tabbar-tab.active .tabbar-tab-close { opacity: 0.6; }
+.tabbar-tab-close:hover {
+  background: rgba(239, 68, 68, 0.18);
+  color: rgba(252, 165, 165, 0.9);
+  opacity: 1 !important;
+}
+
+/* Right-side action buttons */
+.tabbar-actions {
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+  gap: 2px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--glass-border);
+  overflow: visible; /* let dropdowns escape */
+  position: relative;
+  z-index: 21;
+}
+
+.tabbar-action-btn {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.13s;
+  flex-shrink: 0;
+}
+.tabbar-action-btn svg { width: 13px; height: 13px; }
+.tabbar-action-btn:hover {
+  background: var(--glass-hover);
+  color: var(--text-secondary);
+  border-color: var(--glass-border);
+}
+.tabbar-action-btn.active,
+.tabbar-action-btn:active {
+  background: var(--accent-dim);
+  border-color: rgba(192, 132, 252, 0.25);
+  color: var(--accent);
+}
+.tabbar-new-btn:hover {
+  background: var(--accent-dim);
+  border-color: rgba(192, 132, 252, 0.25);
+  color: var(--accent);
+}
+
+/* Dropdown wrapper for positioning */
+.tabbar-dropdown-wrap {
+  position: relative;
+}
+
+/* All open files dropdown */
+.tabbar-file-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 220px;
+  max-width: 280px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: rgba(12, 8, 28, 0.92);
+  backdrop-filter: blur(48px) saturate(200%);
+  -webkit-backdrop-filter: blur(48px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-top-color: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  padding: 5px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+  z-index: 9999;
+  animation: dropIn 0.14s cubic-bezier(0.22, 1, 0.36, 1) both;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(192, 132, 252, 0.2) transparent;
+}
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.tabbar-file-list-header {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 4px 8px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  margin-bottom: 3px;
+}
+
+.tabbar-file-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  color: rgba(255, 255, 255, 0.55);
+  font-family: "Roboto", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.12s;
+}
+.tabbar-file-item:hover {
+  background: rgba(192, 132, 252, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+}
+.tabbar-file-item.active {
+  background: rgba(192, 132, 252, 0.12);
+  color: var(--text-primary);
+}
+.tabbar-file-item.active .tfi-title { color: var(--accent); }
+
+.tfi-icon, .tfi-pin {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+.tfi-pin { color: rgba(251, 191, 36, 0.75); }
+.tfi-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tfi-badge {
+  font-size: 7.5px;
+  font-weight: 800;
+  padding: 1px 3px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.tfi-badge.md {
+  background: rgba(96, 165, 250, 0.12);
+  color: rgba(96, 165, 250, 0.75);
+  border-color: rgba(96, 165, 250, 0.2);
+}
+
+.tabbar-file-empty {
+  padding: 10px 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* New file type menu */
+.tabbar-new-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 180px;
+  background: rgba(12, 8, 28, 0.92);
+  backdrop-filter: blur(48px) saturate(200%);
+  -webkit-backdrop-filter: blur(48px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-top-color: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  padding: 5px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+  z-index: 9999;
+  animation: dropIn 0.14s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.tabbar-new-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: "Roboto", sans-serif;
+  cursor: pointer;
+  transition: all 0.12s;
+  text-align: left;
+}
+.tabbar-new-item:hover {
+  background: rgba(192, 132, 252, 0.1);
+  color: rgba(255, 255, 255, 0.95);
+}
+.tabbar-new-item svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+.tabbar-new-item:hover svg { color: var(--accent); }
+
+.tni-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.tni-ext {
+  display: block;
+  font-size: 10px;
+  font-family: "JetBrains Mono", monospace;
+  color: var(--text-muted);
+  margin-top: 1px;
 }

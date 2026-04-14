@@ -6,7 +6,7 @@
   "build": {
     "beforeDevCommand": "npm start",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "npm build",
+    "beforeBuildCommand": "npm run build",
     "frontendDist": "../dist/xnote/browser"
   },
   "app": {
