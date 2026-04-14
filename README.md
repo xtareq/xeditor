@@ -139,7 +139,7 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 ```
 MIT License
-Copyright (c) 2024 Tareq Hossain
+Copyright (c) 2026 Tareq Hossain
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software to use, copy, modify, merge, publish, and distribute it freely.
 ```
