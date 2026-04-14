@@ -10,7 +10,7 @@
 
 | Text Editor View | Markdown Editor View|
 |:-----------:|:-------------------:|
-| ![Editor](screenshots/editor.png) | ![Syntax](screenshots/syntax.png) |
+| ![Editor](screenshots/editor.png) | ![Syntax](screenshots/markdown.png) |
 
 
 
