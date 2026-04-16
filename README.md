@@ -36,7 +36,7 @@
 | Platform | Download |
 |----------|----------|
 | Windows x64 (MSI) | [XEditor_1.0.0_x64_en-US.msi](https://github.com/xtareq/xeditor/releases/download/v1.0.0/XEditor_1.0.0_x64_en-US.msi) |
-| Microsoft Store | *Coming Soon* |
+| Microsoft Store | [Get Now](https://apps.microsoft.com/detail/9P8X3HZWLTSR?hl=en-us&gl=MY&ocid=pdpshare) |
 
 ---
 
@@ -51,7 +51,7 @@
 
 ### Option 2 — Microsoft Store
 
-Search for **XEditor** on the Microsoft Store *(coming soon)*.
+Search for **XEditor** on the Microsoft Store or [Get Now](https://apps.microsoft.com/detail/9P8X3HZWLTSR?hl=en-us&gl=MY&ocid=pdpshare).
 
 ---
 
